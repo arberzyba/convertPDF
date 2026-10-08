@@ -25,6 +25,17 @@ test('larger text becomes a heading and wrapped lines merge into paragraphs', ()
   expect(convert(spans, 'text')).toBe('Title\n\nThis is a paragraph of text.\n\nSecond paragraph.')
 })
 
+test('widely spaced lines still merge when that is the document’s normal line spacing', () => {
+  const spans = [
+    span('A double-spaced', 50, 100),
+    span('paragraph of text.', 50, 124),
+    span('It carries on', 50, 148),
+    span('for a while.', 50, 172),
+    span('Next paragraph.', 50, 220),
+  ]
+  expect(convert(spans)).toBe('A double-spaced paragraph of text. It carries on for a while.\n\nNext paragraph.')
+})
+
 test('an indented first line starts a new paragraph', () => {
   const spans = [span('End of the first one.', 50, 100), span('Start of the next', 65, 112), span('which wraps.', 50, 124)]
   expect(convert(spans)).toBe('End of the first one.\n\nStart of the next which wraps.')

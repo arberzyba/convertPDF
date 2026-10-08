@@ -58,6 +58,21 @@ function fontSizes(pages: Page[]) {
   return { body, headings }
 }
 
+/**
+ * The usual distance between the baselines of wrapped body lines. Wrapped lines are the closest together,
+ * so this is taken from the low end of the gaps and not the middle, which paragraph gaps can dominate.
+ */
+function linePitch(pages: Line[][], body: number): number {
+  const gaps: number[] = []
+  for (const lines of pages) {
+    for (let i = 1; i < lines.length; i++) {
+      const gap = lines[i].y - lines[i - 1].y
+      if (gap > 0.5 * body && gap < 3 * body) gaps.push(gap)
+    }
+  }
+  return gaps.length ? gaps.sort((a, b) => a - b)[gaps.length >> 2] : 1.2 * body
+}
+
 const median = (values: number[]) => values.sort((a, b) => a - b)[values.length >> 1]
 const width = (cell: Cell) => cell.xEnd - cell.x
 
@@ -123,9 +138,10 @@ function table(lines: Line[]): Block {
 /** Turns positioned lines into headings, paragraphs, list items and tables. */
 export function toBlocks(pages: Page[]): Block[] {
   const { body, headings } = fontSizes(pages)
+  const ordered = pages.map(readingOrder)
+  const pitch = linePitch(ordered, body)
   const blocks: Block[] = []
-  for (const page of pages) {
-    const lines = readingOrder(page)
+  for (const lines of ordered) {
     let prev: Line | undefined
     let itemX = 0
     for (let i = 0; i < lines.length; i++) {
@@ -144,7 +160,7 @@ export function toBlocks(pages: Page[]): Block[] {
       const last = blocks.at(-1)
       const gap = prev ? line.y - prev.y : -1
       // A negative gap means the text jumped to the next column or page.
-      const near = prev !== undefined && gap > 0 && gap < 1.45 * Math.max(line.size, prev.size)
+      const near = prev !== undefined && gap > 0 && gap < 1.25 * pitch * Math.max(1, line.size / body, prev.size / body)
       // Sizes measured by OCR vary a little from line to line.
       const wraps = near && Math.abs(line.size - prev!.size) <= 0.1 * line.size
       const isHeading = line.size > body * 1.15 && text.length <= 150 && /\p{L}/u.test(text)

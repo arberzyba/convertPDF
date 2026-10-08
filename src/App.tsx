@@ -31,7 +31,7 @@ export default function App() {
     format: 'markdown',
     removeHeadersFooters: true,
     removePageNumbers: true,
-    ocrLang: 'eng',
+    ocrLang: 'auto',
   })
   const abort = useRef<AbortController | null>(null)
 

@@ -20,6 +20,7 @@ export interface Options {
   format: Format
   removeHeadersFooters: boolean
   removePageNumbers: boolean
+  /** A key of LANGUAGES, or 'auto' to identify the language of each file. */
   ocrLang: string
 }
 
@@ -28,6 +29,8 @@ export interface Result {
   format: Format
   pages: number
   ocrPages: number
+  /** The language scanned pages were read in, or 'auto' if none could be identified. */
+  ocrLang: string
 }
 
 export async function convertPdf(
@@ -48,6 +51,8 @@ export async function convertPdf(
     const numbers = parsePageRange(pageRange, pdf.numPages)
     let pages: Page[] = []
     let ocrPages = 0
+    // Once a scanned page's language has been identified, the rest of the file is read in it.
+    let ocrLang = options.ocrLang
     for (const [i, number] of numbers.entries()) {
       const progress = `Page ${i + 1} of ${numbers.length}`
       onProgress(progress)
@@ -55,7 +60,9 @@ export async function convertPdf(
       const page = await extractPage(pdfPage)
       if (page.lines.reduce((sum, line) => sum + lineText(line).length, 0) < MIN_TEXT_LENGTH) {
         onProgress(`${progress} (reading scanned page)`)
-        page.lines = buildLines(await ocrPage(pdfPage, options.ocrLang))
+        const read = await ocrPage(pdfPage, ocrLang)
+        page.lines = buildLines(read.spans)
+        ocrLang = read.lang
         ocrPages++
       }
       pdfPage.cleanup()
@@ -65,7 +72,7 @@ export async function convertPdf(
     if (options.removeHeadersFooters) pages = removeHeadersFooters(pages)
     if (options.removePageNumbers) pages = removePageNumbers(pages)
     const text = render(toBlocks(pages), options.format)
-    return { text, format: options.format, pages: numbers.length, ocrPages }
+    return { text, format: options.format, pages: numbers.length, ocrPages, ocrLang }
   } finally {
     await task.destroy()
   }

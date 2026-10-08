@@ -1,9 +1,5 @@
 import type { Options } from '../convert'
-
-const LANGUAGES = [
-  ['eng', 'English'],
-  ['deu', 'German'],
-]
+import { LANGUAGES } from '../convert/ocr'
 
 interface Props {
   options: Options
@@ -41,7 +37,8 @@ export default function OptionsPanel({ options, disabled, onChange }: Props) {
       <label>
         Language of scanned pages{' '}
         <select value={options.ocrLang} onChange={(e) => set({ ocrLang: e.target.value })}>
-          {LANGUAGES.map(([code, name]) => (
+          <option value="auto">Auto-detect</option>
+          {Object.entries(LANGUAGES).map(([code, name]) => (
             <option key={code} value={code}>
               {name}
             </option>

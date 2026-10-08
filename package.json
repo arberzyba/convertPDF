@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "franc": "^6.2.0",
     "jszip": "^3.10.2",
     "pdfjs-dist": "^6.4.299",
     "react": "^19.3.0",

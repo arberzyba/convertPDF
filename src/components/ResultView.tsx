@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Result } from '../convert'
+import { LANGUAGES } from '../convert/ocr'
 import { estimatePdfTokens, estimateTokens, IMAGE_TOKENS_PER_PAGE } from '../convert/tokens'
 import { saveText } from '../download'
 
@@ -25,7 +26,9 @@ export default function ResultView({ name, result }: { name: string; result: Res
       <p>
         About <strong>{count(tokens)} tokens</strong>, against about {count(pdfTokens)} for the PDF itself (
         {Math.round((1 - tokens / pdfTokens) * 100)}% fewer).
-        {result.ocrPages > 0 && ` ${result.ocrPages} of ${result.pages} pages were scans read with OCR.`}
+        {result.ocrPages > 0 &&
+          ` ${result.ocrPages} of ${result.pages} pages were scans read with OCR` +
+            (LANGUAGES[result.ocrLang] ? ` as ${LANGUAGES[result.ocrLang]}.` : '.')}
       </p>
       <p className="note">
         Rough estimates: four characters per token, and {count(IMAGE_TOKENS_PER_PAGE)} tokens for the image of each
