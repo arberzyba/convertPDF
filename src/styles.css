@@ -1,4 +1,177 @@
+:root {
+  color-scheme: light dark;
+  --border: light-dark(#d0d4da, #3a3f47);
+  --muted: light-dark(#5b6470, #a0a8b3);
+  --accent: light-dark(#1f5fd1, #7aa7ff);
+  --surface: light-dark(#f5f6f8, #22262c);
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
+  background: light-dark(#fff, #16191d);
+}
+
+main {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+h1 {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+input,
+select {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+button.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: light-dark(#fff, #10131a);
+  padding-inline: 1.5rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 2.5rem 1rem;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.drop strong {
+  color: CanvasText;
+}
+
+.drop.over,
+.drop:focus-within {
+  border-color: var(--accent);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.queue {
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.queue li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.queue li + li {
+  border-top: 1px solid var(--border);
+}
+
+.queue li.selected {
+  background: var(--surface);
+}
+
+.queue .name {
+  flex: 1 1 12rem;
+  min-width: 0;
+  padding-inline: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.queue .name:disabled {
+  color: CanvasText;
+  cursor: default;
+}
+
+.queue input {
+  width: 11rem;
+}
+
+.status {
+  flex: 0 1 14rem;
+  color: var(--muted);
+}
+
+.status.error {
+  color: light-dark(#b3261e, #ff8a80);
+}
+
+.actions,
+.result header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.result {
+  margin-top: 2rem;
+}
+
+.result h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+.result p {
+  margin: 0.5rem 0 0;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.result textarea {
+  box-sizing: border-box;
+  width: 100%;
+  height: 30rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.85rem;
 }
