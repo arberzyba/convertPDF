@@ -2,7 +2,7 @@ import { getDocument, GlobalWorkerOptions, PasswordResponses } from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { removeHeadersFooters, removePageNumbers } from './cleanup'
 import { extractPage } from './extract'
-import { lineText, toBlocks } from './layout'
+import { buildLines, lineText, toBlocks } from './layout'
 import { ocrPage } from './ocr'
 import { parsePageRange } from './pageRange'
 import { render } from './render'
@@ -55,7 +55,7 @@ export async function convertPdf(
       const page = await extractPage(pdfPage)
       if (page.lines.reduce((sum, line) => sum + lineText(line).length, 0) < MIN_TEXT_LENGTH) {
         onProgress(`${progress} (reading scanned page)`)
-        page.ocrText = await ocrPage(pdfPage, options.ocrLang)
+        page.lines = buildLines(await ocrPage(pdfPage, options.ocrLang))
         ocrPages++
       }
       pdfPage.cleanup()

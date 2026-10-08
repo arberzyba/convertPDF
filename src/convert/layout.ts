@@ -125,13 +125,6 @@ export function toBlocks(pages: Page[]): Block[] {
   const { body, headings } = fontSizes(pages)
   const blocks: Block[] = []
   for (const page of pages) {
-    if (page.ocrText !== undefined) {
-      for (const para of page.ocrText.split(/\n\s*\n/)) {
-        const lines = para.split('\n').map((line) => line.trim()).filter(Boolean)
-        if (lines.length) blocks.push({ type: 'paragraph', text: lines.reduce(join) })
-      }
-      continue
-    }
     const lines = readingOrder(page)
     let prev: Line | undefined
     let itemX = 0
@@ -152,7 +145,8 @@ export function toBlocks(pages: Page[]): Block[] {
       const gap = prev ? line.y - prev.y : -1
       // A negative gap means the text jumped to the next column or page.
       const near = prev !== undefined && gap > 0 && gap < 1.45 * Math.max(line.size, prev.size)
-      const wraps = near && line.size === prev!.size
+      // Sizes measured by OCR vary a little from line to line.
+      const wraps = near && Math.abs(line.size - prev!.size) <= 0.1 * line.size
       const isHeading = line.size > body * 1.15 && text.length <= 150 && /\p{L}/u.test(text)
       const item = text.match(LIST_ITEM)
 

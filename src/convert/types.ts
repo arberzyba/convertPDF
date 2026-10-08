@@ -25,8 +25,6 @@ export interface Page {
   width: number
   height: number
   lines: Line[]
-  /** Set for scanned pages, which have no positioned text. */
-  ocrText?: string
 }
 
 export type Block =
