@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { UploadIcon } from './icons'
 
 export default function DropZone({ onFiles }: { onFiles: (files: File[]) => void }) {
   const [over, setOver] = useState(false)
@@ -26,8 +27,11 @@ export default function DropZone({ onFiles }: { onFiles: (files: File[]) => void
           e.target.value = ''
         }}
       />
-      <strong>Drop PDFs here or click to choose</strong>
-      <span>Files are converted in your browser and are never uploaded.</span>
+      <span className="drop-icon">
+        <UploadIcon />
+      </span>
+      <strong>Drop PDFs here</strong>
+      <span>or click to choose files</span>
     </label>
   )
 }

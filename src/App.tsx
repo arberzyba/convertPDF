@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import DropZone from './components/DropZone'
 import FileQueue from './components/FileQueue'
+import { DownloadIcon, FileIcon, LockIcon } from './components/icons'
 import OptionsPanel from './components/OptionsPanel'
 import ResultView from './components/ResultView'
 import { convertPdf, type Options, type Result } from './convert'
@@ -13,6 +14,8 @@ export interface Item {
   range: string
   status: 'ready' | 'working' | 'done' | 'error'
   message: string
+  /** Share of the pages converted so far, from 0 to 1. */
+  progress: number
   result?: Result
 }
 
@@ -44,7 +47,7 @@ export default function App() {
       ...items,
       ...pdfs.map((file): Item => {
         const message = file.size > LARGE_FILE ? 'large file, conversion may be slow' : ''
-        return { id: nextId++, file, range: '', status: 'ready', message }
+        return { id: nextId++, file, range: '', status: 'ready', message, progress: 0 }
       }),
     ])
   }
@@ -54,9 +57,9 @@ export default function App() {
     for (const item of items) {
       const controller = new AbortController()
       abort.current = controller
-      update(item.id, { status: 'working', message: 'Opening', result: undefined })
+      update(item.id, { status: 'working', message: 'Opening', progress: 0, result: undefined })
       try {
-        const progress = (message: string) => update(item.id, { message })
+        const progress = (message: string, progress: number) => update(item.id, { message, progress })
         const result = await convertPdf(item.file, item.range, options, progress, controller.signal)
         update(item.id, { status: 'done', message: '', result })
         setSelected((selected) => selected ?? item.id)
@@ -73,35 +76,61 @@ export default function App() {
   const shown = done.find((item) => item.id === selected)
 
   return (
-    <main>
-      <h1>PDF to Markdown</h1>
-      <p>Turn PDFs into Markdown or plain text, so they cost far fewer tokens when you give them to an AI model.</p>
-      <DropZone onFiles={addFiles} />
-      {items.length > 0 && (
-        <>
+    <>
+      <header className="top">
+        <span className="logo">
+          <FileIcon />
+        </span>
+        <div>
+          <h1>PDF to Markdown</h1>
+          <p>Turn PDFs into Markdown or plain text that costs far fewer tokens in AI models.</p>
+        </div>
+        <span className="badge">
+          <LockIcon />
+          Files never leave your browser
+        </span>
+      </header>
+      <main>
+        <div className="side">
+          <DropZone onFiles={addFiles} />
           <OptionsPanel options={options} disabled={running} onChange={setOptions} />
-          <FileQueue
-            items={items}
-            selected={selected}
-            running={running}
-            onSelect={setSelected}
-            onRange={(id, range) => update(id, { range })}
-            onRemove={(id) => setItems((items) => items.filter((item) => item.id !== id))}
-            onCancel={() => abort.current?.abort()}
-          />
-          <div className="actions">
-            <button className="primary" disabled={running} onClick={convertAll}>
-              {running ? 'Converting…' : 'Convert'}
-            </button>
-            {done.length > 1 && (
-              <button onClick={() => saveZip(done.map((item) => ({ name: outputName(item), text: item.result!.text })))}>
-                Download all as zip
-              </button>
-            )}
-          </div>
-        </>
-      )}
-      {shown && <ResultView name={outputName(shown)} result={shown.result!} />}
-    </main>
+          {items.length > 0 && (
+            <>
+              <FileQueue
+                items={items}
+                selected={selected}
+                running={running}
+                onSelect={setSelected}
+                onRange={(id, range) => update(id, { range })}
+                onRemove={(id) => setItems((items) => items.filter((item) => item.id !== id))}
+                onCancel={() => abort.current?.abort()}
+              />
+              <div className="actions">
+                <button className="primary convert" disabled={running} onClick={convertAll}>
+                  {running ? 'Converting…' : `Convert ${items.length} ${items.length === 1 ? 'file' : 'files'}`}
+                </button>
+                {done.length > 1 && (
+                  <button
+                    onClick={() => saveZip(done.map((item) => ({ name: outputName(item), text: item.result!.text })))}
+                  >
+                    <DownloadIcon />
+                    Download all as zip
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+        {shown ? (
+          <ResultView name={outputName(shown)} result={shown.result!} />
+        ) : (
+          <section className="card empty">
+            <FileIcon />
+            <strong>Nothing converted yet</strong>
+            <span>Add PDFs and press Convert. The text appears here, ready to copy or download.</span>
+          </section>
+        )}
+      </main>
+    </>
   )
 }

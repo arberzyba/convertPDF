@@ -37,7 +37,7 @@ export async function convertPdf(
   file: File,
   pageRange: string,
   options: Options,
-  onProgress: (message: string) => void,
+  onProgress: (message: string, fraction: number) => void,
   signal: AbortSignal,
 ): Promise<Result> {
   const task = getDocument({ data: await file.arrayBuffer(), cMapUrl: asset('cmaps'), wasmUrl: asset('wasm') })
@@ -55,12 +55,12 @@ export async function convertPdf(
     let ocrLang = options.ocrLang
     for (const [i, number] of numbers.entries()) {
       const progress = `Page ${i + 1} of ${numbers.length}`
-      onProgress(progress)
+      onProgress(progress, i / numbers.length)
       const pdfPage = await pdf.getPage(number)
       const page = await extractPage(pdfPage)
       const textLength = page.lines.reduce((sum, line) => sum + lineText(line).length, 0)
       if (textLength < MIN_TEXT_LENGTH || (await isScan(pdfPage))) {
-        onProgress(`${progress} (reading scanned page)`)
+        onProgress(`${progress} (reading scanned page)`, i / numbers.length)
         const read = await ocrPage(pdfPage, ocrLang)
         page.lines = buildLines(read.spans)
         ocrLang = read.lang
