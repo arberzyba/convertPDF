@@ -75,6 +75,7 @@ function linePitch(pages: Line[][], body: number): number {
 
 const median = (values: number[]) => values.sort((a, b) => a - b)[values.length >> 1]
 const width = (cell: Cell) => cell.xEnd - cell.x
+const lineWidth = (line: Line) => line.cells.at(-1)!.xEnd - line.cells[0].x
 
 /** Finds the x position of the gap between two text columns, if the page has one. */
 function findGutter(page: Page): number | null {
@@ -142,6 +143,7 @@ export function toBlocks(pages: Page[]): Block[] {
   const pitch = linePitch(ordered, body)
   const blocks: Block[] = []
   for (const lines of ordered) {
+    const full = 0.8 * Math.max(...lines.map(lineWidth))
     let prev: Line | undefined
     let itemX = 0
     for (let i = 0; i < lines.length; i++) {
@@ -160,9 +162,13 @@ export function toBlocks(pages: Page[]): Block[] {
       const last = blocks.at(-1)
       const gap = prev ? line.y - prev.y : -1
       // A negative gap means the text jumped to the next column or page.
-      const near = prev !== undefined && gap > 0 && gap < 1.25 * pitch * Math.max(1, line.size / body, prev.size / body)
+      const spacing = prev ? gap / (pitch * Math.max(1, line.size / body, prev.size / body)) : 0
+      const near = spacing > 0 && spacing < 1.25
       // Sizes measured by OCR vary a little from line to line.
-      const wraps = near && Math.abs(line.size - prev!.size) <= 0.1 * line.size
+      const sameSize = prev !== undefined && Math.abs(line.size - prev.size) <= 0.1 * line.size
+      const wraps = near && sameSize
+      // A line that reaches the right margin was wrapped, even if the next line is set a little further down.
+      const wrapsLoosely = sameSize && spacing > 0 && spacing < 2 && lineWidth(prev!) >= full
       const isHeading = line.size > body * 1.15 && text.length <= 150 && /\p{L}/u.test(text)
       const item = text.match(LIST_ITEM)
 
@@ -177,6 +183,7 @@ export function toBlocks(pages: Page[]): Block[] {
         // An indented line starts a new paragraph, but continues a list item.
         (wraps && last?.type === 'paragraph' && x - prev!.cells[0].x < 0.8 * line.size) ||
         (wraps && last?.type === 'item' && x > itemX + 1) ||
+        (wrapsLoosely && last?.type === 'paragraph' && !/[.!?:]\W*$/.test(last.text)) ||
         // A sentence cut off by a column or page break carries on.
         (gap <= 0 && last?.type === 'paragraph' && !/[.!?:]\W*$/.test(last.text) && /^\p{Ll}/u.test(text))
       ) {

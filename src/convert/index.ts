@@ -1,7 +1,7 @@
 import { getDocument, GlobalWorkerOptions, PasswordResponses } from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { removeHeadersFooters, removePageNumbers } from './cleanup'
-import { extractPage } from './extract'
+import { extractPage, isScan } from './extract'
 import { buildLines, lineText, toBlocks } from './layout'
 import { ocrPage } from './ocr'
 import { parsePageRange } from './pageRange'
@@ -13,7 +13,7 @@ GlobalWorkerOptions.workerSrc = workerUrl
 // pdf.js resolves these from inside its worker, so they must be absolute.
 const asset = (dir: string) => new URL(`pdfjs/${dir}/`, document.baseURI).href
 
-/** Pages with less text than this are treated as scans. */
+/** Pages with less text than this are read with OCR, as are pages that are an image of a document. */
 const MIN_TEXT_LENGTH = 20
 
 export interface Options {
@@ -58,7 +58,8 @@ export async function convertPdf(
       onProgress(progress)
       const pdfPage = await pdf.getPage(number)
       const page = await extractPage(pdfPage)
-      if (page.lines.reduce((sum, line) => sum + lineText(line).length, 0) < MIN_TEXT_LENGTH) {
+      const textLength = page.lines.reduce((sum, line) => sum + lineText(line).length, 0)
+      if (textLength < MIN_TEXT_LENGTH || (await isScan(pdfPage))) {
         onProgress(`${progress} (reading scanned page)`)
         const read = await ocrPage(pdfPage, ocrLang)
         page.lines = buildLines(read.spans)

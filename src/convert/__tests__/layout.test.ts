@@ -36,6 +36,22 @@ test('widely spaced lines still merge when that is the document’s normal line 
   expect(convert(spans)).toBe('A double-spaced paragraph of text. It carries on for a while.\n\nNext paragraph.')
 })
 
+test('a full line that does not end its sentence continues across a slightly larger gap', () => {
+  const spans = [
+    span('Normal spacing is twelve here', 50, 100),
+    span('and it carries on for a bit', 50, 112),
+    span('until it ends.', 50, 124),
+    span('This full-width line has no end', 50, 152),
+    span('but continues here.', 50, 170),
+    span('Short', 50, 198),
+    span('line stays apart.', 50, 216),
+  ]
+  expect(convert(spans)).toBe(
+    'Normal spacing is twelve here and it carries on for a bit until it ends.\n\n' +
+      'This full-width line has no end but continues here.\n\nShort\n\nline stays apart.',
+  )
+})
+
 test('an indented first line starts a new paragraph', () => {
   const spans = [span('End of the first one.', 50, 100), span('Start of the next', 65, 112), span('which wraps.', 50, 124)]
   expect(convert(spans)).toBe('End of the first one.\n\nStart of the next which wraps.')

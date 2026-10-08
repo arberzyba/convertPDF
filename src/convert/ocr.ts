@@ -32,6 +32,9 @@ const IDENTIFIED_AS: Record<string, string> = { sqi: 'als', nor: 'nob' }
 /** Pages are rendered at 72 dpi times this before being read; OCR needs about 300 dpi to be accurate. */
 const SCALE = 4
 
+/** Lines whose words average less than this confidence (out of 100) are dropped. Real text scores around 90. */
+const MIN_CONFIDENCE = 65
+
 let worker: Promise<Worker> | undefined
 let workerLang = ''
 
@@ -47,7 +50,11 @@ async function read(canvas: HTMLCanvasElement, lang: string): Promise<Span[]> {
     workerLang = lang
   }
   const { data } = await (await worker!).recognize(canvas, {}, { blocks: true })
-  const lines = data.blocks!.flatMap((block) => block.paragraphs).flatMap((paragraph) => paragraph.lines)
+  const lines = data.blocks!
+    .flatMap((block) => block.paragraphs)
+    .flatMap((paragraph) => paragraph.lines)
+    // Signatures, stamps and logos are read as junk that the engine itself has little confidence in.
+    .filter((line) => line.words.reduce((sum, word) => sum + word.confidence, 0) >= MIN_CONFIDENCE * line.words.length)
   return lines.flatMap((line) =>
     line.words.map((word) => ({
       // Words on a blurry scan can touch, so the space is added here and not inferred from the gap.
